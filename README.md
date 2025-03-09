@@ -1,4 +1,3 @@
-# flowritext-chatgpt-prompts-organizer
 # Flowritext ChatGPT Prompts Organizer
 
 Firefox Addon that groups your prompts by organizing them under your chat topics.
