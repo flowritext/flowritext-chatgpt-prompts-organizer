@@ -1,17 +1,8 @@
-# Flowritext ChatGPT Prompts Organizer
+## License  
+This project is licensed under the **GNU Affero General Public License v3.0** (AGPL-3.0).  
+See the [LICENSE](./LICENSE) file for details.  
 
-Firefox Addon that groups your prompts by organizing them under your chat topics.
+### 🚀 Commercial License Available  
+If you need to use this software **without AGPL requirements** (for proprietary business use), you can purchase a **commercial license**.  
 
-## Features
-- Automatically groups ChatGPT prompts.
-- Enhances ChatGPT usability.
-- Simple to install and use.
-
-## Installation
-1. Clone this repository.
-2. Open Firefox and go to `about:debugging`.
-3. Click `This Firefox` → `Load Temporary Add-on`.
-4. Select `manifest.json`.
-
-## License
-MIT License
+👉 Contact us at **flowritext@gmail.com** or visit **www.flowritext.com** to learn more.

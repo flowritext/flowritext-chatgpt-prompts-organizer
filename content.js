@@ -3,106 +3,87 @@
  * 
  * Copyright (C) 2025 Flowritext
  * 
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU Affero General Public License for more details.
- * 
- * You should have received a copy of the GNU Affero General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ * Licensed under the GNU Affero General Public License v3 or later.
  */
 
 (function () {
+
     /**
-     * Adds toggle buttons to each history item in the list.
-     * Each button allows expanding/collapsing additional details.
+     * Adds toggle buttons beside each chat history entry in the sidebar.
+     * (Updated for ChatGPT.com 2025 UI)
      */
     function addToggleButtons() {
-        // Select all list items representing history items
-        const listItems = document.querySelectorAll('li.relative[data-testid^="history-item-"]');
+        const chatLinks = document.querySelectorAll(
+            '.group\\/sidebar-expando-section #history > a.group.__menu-item.hoverable[href^="/c/"]'
+        );
 
-        listItems.forEach(li => {
-            const anchor = li.querySelector('a[href]'); // Get the first anchor inside the list item
-            if (!anchor) return; // Skip if no anchor is found
+        chatLinks.forEach(anchor => {
+            const hrefValue = anchor.getAttribute("href");
+            const toggleButtonId = `toggle-${hrefValue.replace(/[^\w-]/g, "")}`;
 
-            const hrefValue = anchor.getAttribute('href'); // Extract href attribute value
-            const toggleButtonId = `toggle-${hrefValue.replace(/[^\w-]/g, '')}`; // Create a unique ID for toggle button
+            // Skip if already has button
+            if (anchor.parentElement.querySelector(`#${toggleButtonId}`)) return;
 
-            // Prevent duplicate buttons from being added
-            if (!li.querySelector(`#${toggleButtonId}`)) {
-                const toggleButton = document.createElement('button');
-                toggleButton.id = toggleButtonId;
-                toggleButton.innerHTML = "▼"; // Default Down Icon
-                toggleButton.style.cssText = `
-                    cursor: pointer;
-                    background: #0d0d0d;
-                    color: #ececec;
-                    border: 1px solid #ececec;
-                    padding: 4px;
-                    border-radius: 50%;
-                    width: 20px;
-                    height: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-size: 10px;
-                    transition: transform 0.3s ease, border 0.2s ease, box-shadow 0.2s ease;
-                `;
+            // Create toggle button
+            const toggleButton = document.createElement("button");
+            toggleButton.id = toggleButtonId;
+            toggleButton.innerHTML = "▼";
+            toggleButton.style.cssText = `
+                cursor: pointer;
+                background: #0d0d0d;
+                color: #ececec;
+                border: 1px solid #ececec;
+                padding: 4px;
+                border-radius: 50%;
+                width: 20px;
+                height: 20px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 10px;
+                transition: transform 0.3s ease, border 0.2s ease, box-shadow 0.2s ease;
+            `;
 
-                // Hover effect for the button
-                toggleButton.addEventListener("mouseenter", () => {
-                    toggleButton.style.border = "2px solid white";
-                    toggleButton.style.boxShadow = "0 0 8px white";
-                });
+            toggleButton.addEventListener("mouseenter", () => {
+                toggleButton.style.border = "2px solid white";
+                toggleButton.style.boxShadow = "0 0 8px white";
+            });
+            toggleButton.addEventListener("mouseleave", () => {
+                toggleButton.style.border = "1px solid #ececec";
+                toggleButton.style.boxShadow = "none";
+            });
 
-                toggleButton.addEventListener("mouseleave", () => {
-                    toggleButton.style.border = "1px solid #ececec";
-                    toggleButton.style.boxShadow = "none";
-                });
+            toggleButton.addEventListener("click", (event) => {
+                event.stopPropagation();
+                updateHistory(hrefValue, anchor, toggleButton);
+            });
 
-                // Click event to toggle history details
-                toggleButton.addEventListener("click", (event) => {
-                    event.stopPropagation();
-                    updateHistory(hrefValue, li, toggleButton);
-                });
-
-                // Create a wrapper to align button and link
-                const wrapper = document.createElement('div');
-                wrapper.style.cssText = "display: flex; align-items: center; gap: 1px; padding-left: 8px;";
-
-                wrapper.appendChild(toggleButton);
-                anchor.before(wrapper); // Insert wrapper before anchor
-                wrapper.appendChild(anchor);
-            }
+            // Wrap button + link together
+            const wrapper = document.createElement("div");
+            wrapper.style.cssText = `
+                display: flex;
+                align-items: center;
+                gap: 4px;
+                padding-left: 8px;
+            `;
+            wrapper.appendChild(toggleButton);
+            anchor.parentElement.insertBefore(wrapper, anchor);
+            wrapper.appendChild(anchor);
         });
     }
 
     /**
-     * Expands or collapses the history details based on user interaction.
-     * @param {string} id - The history item identifier.
-     * @param {HTMLElement} li - The list item element.
-     * @param {HTMLElement} toggleButton - The button controlling the toggle.
+     * Expands or collapses the chat preview under a sidebar item.
      */
-    function updateHistory(id, li, toggleButton) {
-        const charLimit = 28; // Limit the preview text length
-        console.log("History updated for:", id);
+    function updateHistory(id, anchor, toggleButton) {
+        const charLimit = 28;
 
-        // Close any previously opened details
+        // Close any open previews first
         document.querySelectorAll(".custom-collapsible-container").forEach(containerDiv => {
             containerDiv.style.maxHeight = "0px";
             containerDiv.style.opacity = "0";
-
-            // Reset button rotation
-            const previousToggle = containerDiv.previousElementSibling;
-            if (previousToggle && previousToggle.tagName === "BUTTON") {
-                previousToggle.style.transform = "rotate(0deg)";
-            }
-
+            const previousToggle = containerDiv.previousElementSibling?.querySelector("button");
+            if (previousToggle) previousToggle.style.transform = "rotate(0deg)";
             setTimeout(() => containerDiv.remove(), 300);
         });
 
@@ -110,13 +91,13 @@
             setTimeout(() => {
                 const articles = document.querySelectorAll('article[data-testid^="conversation-turn-"]');
                 const url = "/c/" + getLastSegment();
-                const anchor = li.querySelector('a[href]');
 
                 if (id && id === url) {
                     let hasValidArticles = false;
-                    let containerDiv = li.nextElementSibling;
+                    let containerDiv = anchor.nextElementSibling;
+                    const parentStyles = window.getComputedStyle(document.body);
 
-                    // If the container already exists, close it
+                    // Toggle off if already open
                     if (containerDiv && containerDiv.classList.contains("custom-collapsible-container")) {
                         containerDiv.style.maxHeight = "0px";
                         containerDiv.style.opacity = "0";
@@ -125,39 +106,42 @@
                         return;
                     }
 
-                    // Create collapsible container for history details
-                    containerDiv = document.createElement('div');
+                    // Create collapsible container
+                    containerDiv = document.createElement("div");
                     containerDiv.className = "custom-collapsible-container";
                     containerDiv.style.cssText = `
-                        margin-top: 5px;
+                        margin-top: 4px;
+                        margin-left: 28px;
                         max-height: 0px;
+                        width: 85%;
                         overflow: hidden;
                         opacity: 0;
-                        transition: max-height 0.3s ease-out, opacity 0.3s ease-out, padding 0.3s ease-out;
-                        padding-left:5px;
+                        transition: max-height 0.35s ease-out, opacity 0.35s ease-out, padding 0.3s ease-out;
+                        padding-left: 5px;
+                        border-left: 1px solid rgba(255,255,255,0.1);
+                        border-radius: 6px;
+                        background-color: ${parentStyles.backgroundColor};
+                        color: ${parentStyles.color};
                     `;
 
-                    // Get parent styles for consistency
-                    const parentStyles = window.getComputedStyle(document.body);
-                    containerDiv.style.backgroundColor = parentStyles.backgroundColor;
-                    containerDiv.style.color = parentStyles.color;
-
-                    // Create content container
-                    const foundDiv = document.createElement('div');
+                    // Inner scrollable area
+                    const foundDiv = document.createElement("div");
                     foundDiv.style.cssText = `
-                        color: red;
                         margin-top: 5px;
-                        max-height: 150px;
+                        
+                        max-height: 200px;
                         overflow-y: auto;
-                        padding: 0 0px;
-                        background: #f9f9f9;
+                        padding: 4px 6px;
                         display: block;
+                        scrollbar-width: thin;
+                        scrollbar-color: #888 transparent;
+                        background-color: ${parentStyles.backgroundColor};
+                        color: ${parentStyles.color};
+                        scroll-behavior: smooth;
                     `;
-                    foundDiv.style.backgroundColor = parentStyles.backgroundColor;
-                    foundDiv.style.color = parentStyles.color;
 
-                    // Add history text previews as clickable links
-                    articles.forEach((article) => {
+                    // Build chat text preview list
+                    articles.forEach(article => {
                         const textElement = article.querySelector(".whitespace-pre-wrap");
                         if (textElement) {
                             hasValidArticles = true;
@@ -166,46 +150,41 @@
 
                             const link = document.createElement("a");
                             link.href = "#";
-                            link.textContent = '• ' + textPreview + "...";
+                            link.textContent = `• ${textPreview}...`;
                             link.title = fullText;
                             link.style.cssText = `
-                            margin-left: 5px;
+                                margin-left: 5px;
                                 display: block;
                                 margin-bottom: 5px;
-                                color:rgb(207, 209, 211);
+                                color: rgb(207, 209, 211);
                                 text-decoration: none;
                                 font-style: italic;
-                                font-size: .9rem;
+                                font-size: 0.9rem;
+                                opacity: 0;
+                                transition: opacity 0.4s ease;
                             `;
 
                             link.addEventListener("click", (event) => {
                                 event.preventDefault();
                                 article.scrollIntoView({ behavior: "smooth", block: "start" });
                             });
+                            link.addEventListener("mouseenter", () => link.style.color = "#fff");
+                            link.addEventListener("mouseleave", () => link.style.color = "rgb(207, 209, 211)");
 
-                            // Hover effect for the button
-                            link.addEventListener("mouseenter", () => {
-                                link.style.color = "#fff"; // Change text color
-                            });
-                            
-                            link.addEventListener("mouseleave", () => {
-                                link.style.color = "rgb(207, 209, 211)"; // Reset color to default
-                            });
-                            
-
+                            requestAnimationFrame(() => (link.style.opacity = "1"));
                             foundDiv.appendChild(link);
                         }
                     });
 
                     if (hasValidArticles) {
                         containerDiv.appendChild(foundDiv);
-                        li.insertAdjacentElement('afterend', containerDiv);
+                        const wrapper = anchor.parentElement;
+                        wrapper.insertAdjacentElement("afterend", containerDiv);
 
-                        // Open animation
+                        // Expand animation
                         requestAnimationFrame(() => {
-                            containerDiv.style.maxHeight = "200px";
+                            containerDiv.style.maxHeight = "240px";
                             containerDiv.style.opacity = "1";
-                            foundDiv.style.padding = "5px";
                             toggleButton.style.transform = "rotate(180deg)";
                         });
                     }
@@ -214,20 +193,15 @@
         });
     }
 
-    /**
-     * Extracts the last segment from the current URL.
-     * @returns {string} Last segment of the URL.
-     */
+    /** Utility: get current conversation ID from URL */
     function getLastSegment() {
         const url = window.location.href;
-        return url.substring(url.lastIndexOf('/') + 1);
+        return url.substring(url.lastIndexOf("/") + 1);
     }
 
-    /**
-     * Initializes the script when the document is ready.
-     */
+    /** Initialize once DOM is ready */
     function runWhenReady() {
-        console.log("Executing code now!");
+        console.log("Flowritext ChatGPT Organizer initialized!");
         addToggleButtons();
     }
 
@@ -237,41 +211,12 @@
         runWhenReady();
     }
 
-    // MutationObserver to monitor page changes
-    const observer = new MutationObserver((mutations) => {
-        let articleAdded = false;
-        let bodyChanged = false;
-        let contentChanged = false;
+    /** Observe sidebar for dynamic changes */
+    const sidebar = document.querySelector('.group\\/sidebar-expando-section');
+    if (sidebar) {
+        const observer = new MutationObserver(() => addToggleButtons());
+        observer.observe(sidebar, { childList: true, subtree: true });
+        window.addEventListener("beforeunload", () => observer.disconnect());
+    }
 
-        addToggleButtons();
-
-        mutations.forEach((mutation) => {
-            if (mutation.type === "childList") {
-                mutation.addedNodes.forEach((node) => {
-                    if (node.nodeType === Node.ELEMENT_NODE && node.matches('article[data-testid^="conversation-turn-"]')) {
-                        articleAdded = true;
-                    }
-                });
-            }
-
-            if (mutation.target === document.body) {
-                bodyChanged = true;
-            }
-
-            if (mutation.target.matches('article[data-testid^="conversation-turn-"]')) {
-                contentChanged = true;
-            }
-        });
-
-        if (articleAdded) console.log('Article Added');
-        else if (bodyChanged) console.log('Body Changed');
-        else if (contentChanged) console.log('Content Changed');
-    });
-
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    // Cleanup observer on page unload
-    window.addEventListener("beforeunload", () => {
-        observer.disconnect();
-    });
 })();
